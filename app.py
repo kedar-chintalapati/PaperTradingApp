@@ -436,6 +436,25 @@ class OptionsStrategy:
 # SECTION 4: STREAMLIT UI
 # --------------------------------------------------
 
+def compute_metrics(results_df: pd.DataFrame) -> pd.DataFrame:
+    metrics = []
+    for strategy in results_df['strategy'].unique():
+        strat_data = results_df[results_df['strategy'] == strategy]
+        returns = strat_data['value'].pct_change().dropna()
+        if returns.std() != 0:
+            sharpe = returns.mean() / returns.std() * np.sqrt(252)
+        else:
+            sharpe = np.nan
+        metrics.append({
+            "Strategy": strategy,
+            "CAGR": gmean(returns + 1) ** 252 - 1,
+            "Volatility": returns.std() * np.sqrt(252),
+            "Sharpe": sharpe,
+            "Max Drawdown": (strat_data['value'].cummax() - strat_data['value']).max()
+        })
+    return pd.DataFrame(metrics)
+
+
 def main():
     st.set_page_config(layout="wide", page_title="Algo Trading Simulator")
 
@@ -517,8 +536,12 @@ def main():
                 progress_bar.progress((day + 1) / total_days)
                 status_text.text(f"Day {day + 1} of {total_days}")
 
+            #st.session_state.results = pd.DataFrame(results)
+            #st.success("Simulation complete!")
             st.session_state.results = pd.DataFrame(results)
+            st.session_state.metrics_df = compute_metrics(st.session_state.results)
             st.success("Simulation complete!")
+
 
     # Main display area
     st.header("Performance Analysis")
@@ -533,7 +556,18 @@ def main():
         st.plotly_chart(fig, use_container_width=True)
 
         # Calculate performance metrics
+        #st.subheader("Performance Metrics")
         st.subheader("Performance Metrics")
+        if st.session_state.metrics_df is not None:
+        # Display the cached metrics using st.table (a static table)
+            st.table(
+            st.session_state.metrics_df.style.format({
+            "CAGR": "{:.2%}",
+            "Volatility": "{:.2%}", 
+            "Sharpe": "{:.2f}",
+            "Max Drawdown": "${:,.2f}"}))
+
+        """
         metrics = []
         for strategy in st.session_state.results['strategy'].unique():
             strat_data = st.session_state.results[st.session_state.results['strategy'] == strategy]
@@ -560,6 +594,7 @@ def main():
             }),
             use_container_width=True
         )
+        """
 
 if __name__ == "__main__":
     main()
