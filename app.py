@@ -453,6 +453,14 @@ def compute_metrics(results_df: pd.DataFrame) -> pd.DataFrame:
             "Max Drawdown": (strat_data['value'].cummax() - strat_data['value']).max()
         })
     return pd.DataFrame(metrics)
+def format_metrics_df(metrics_df: pd.DataFrame) -> pd.DataFrame:
+    # Create a copy so that we don't modify the cached version
+    df = metrics_df.copy()
+    df["CAGR"] = df["CAGR"].apply(lambda x: f"{x:.2%}")
+    df["Volatility"] = df["Volatility"].apply(lambda x: f"{x:.2%}")
+    df["Sharpe"] = df["Sharpe"].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A")
+    df["Max Drawdown"] = df["Max Drawdown"].apply(lambda x: f"${x:,.2f}")
+    return df
 
 
 def main():
@@ -539,7 +547,10 @@ def main():
             #st.session_state.results = pd.DataFrame(results)
             #st.success("Simulation complete!")
             st.session_state.results = pd.DataFrame(results)
-            st.session_state.metrics_df = compute_metrics(st.session_state.results)
+            raw_metrics_df = compute_metrics(st.session_state.results)
+            st.session_state.metrics_df = raw_metrics_df  # Cache the raw version if needed later
+            st.session_state.formatted_metrics_df = format_metrics_df(raw_metrics_df)
+            ##st.session_state.metrics_df = compute_metrics(st.session_state.results)
             st.success("Simulation complete!")
 
 
@@ -558,14 +569,20 @@ def main():
         # Calculate performance metrics
         #st.subheader("Performance Metrics")
         st.subheader("Performance Metrics")
-        if st.session_state.metrics_df is not None:
+
+        st.subheader("Performance Metrics")
+        if "formatted_metrics_df" in st.session_state and st.session_state.formatted_metrics_df is not None:
+            st.table(st.session_state.formatted_metrics_df)
+
+        
+        #if st.session_state.metrics_df is not None:
         # Display the cached metrics using st.table (a static table)
-            st.table(
-            st.session_state.metrics_df.style.format({
-            "CAGR": "{:.2%}",
-            "Volatility": "{:.2%}", 
-            "Sharpe": "{:.2f}",
-            "Max Drawdown": "${:,.2f}"}))
+            #st.table(
+            #st.session_state.metrics_df.style.format({
+            #"CAGR": "{:.2%}",
+            #"Volatility": "{:.2%}", 
+            #"Sharpe": "{:.2f}",
+            #"Max Drawdown": "${:,.2f}"}))
 
         """
         metrics = []
