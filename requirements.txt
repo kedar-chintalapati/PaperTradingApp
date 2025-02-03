@@ -1,0 +1,8 @@
+streamlit
+numpy==1.26.0
+pandas==2.1.1
+plotly==5.15.0
+scipy==1.11.1
+arch==6.2.0
+statsmodels==0.14.0
+python-dotenv==1.0.0
