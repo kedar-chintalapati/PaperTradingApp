@@ -89,7 +89,9 @@ class StockMarket:
     def next_day(self) -> Dict[str, float]:
         self.current_day += 1
         self._update_regime()
-        cholesky = np.linalg.cholesky(self.corr_matrix)
+        # Add a tiny jitter to the diagonal to ensure the matrix is positive definite
+        jitter = np.eye(self.n_stocks) * 1e-6
+        cholesky = np.linalg.cholesky(self.corr_matrix + jitter)
         innovations = np.dot(cholesky, np.random.randn(self.n_stocks))
         regime_return = self.regime_params['regime_returns'][self.regime_state]
 
