@@ -143,10 +143,23 @@ class HistoricalMarket:
         self.data = {}
         self.dates = None
         for ticker in tickers:
-            df = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            #df = yf.download(ticker, start=start_date, end=end_date, progress=False)
             # Use adjusted close prices
-            df = df[['Adj Close']].rename(columns={'Adj Close': 'price'})
+            #df = df[['Adj Close']].rename(columns={'Adj Close': 'price'})
+            #df = df.reset_index()
+            df = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            if df.empty:
+                st.warning(f"No data found for ticker {ticker}. Skipping.")
+                continue
+            if 'Adj Close' in df.columns:
+                df = df[['Adj Close']].rename(columns={'Adj Close': 'price'})
+            elif 'Close' in df.columns:
+                df = df[['Close']].rename(columns={'Close': 'price'})
+            else:
+                st.warning(f"Ticker {ticker} does not have a recognized price column. Skipping.")
+                continue
             df = df.reset_index()
+
             if self.dates is None:
                 self.dates = df['Date']
             self.data[ticker] = df['price'].tolist()
@@ -515,9 +528,17 @@ def main():
         n_stocks = st.sidebar.slider("Number of Stocks", 10, 100, 50)
     else:
         initial_capital = st.sidebar.number_input("Initial Capital ($)", 10000, 1000000, 100000)
+        """
         tickers = st.sidebar.multiselect("Select Ticker Symbols", 
                                          options=["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "SPY", "FB", "NFLX"],
                                          default=["AAPL", "MSFT", "GOOGL", "AMZN"])
+                                         """
+
+        tickers_input = st.sidebar.text_input("Enter Ticker Symbols (comma separated)", 
+                                                value="AAPL, MSFT, GOOGL, AMZN, TSLA")
+        tickers = [ticker.strip().upper() for ticker in tickers_input.split(",") if ticker.strip()]
+
+        
         start_date = st.sidebar.date_input("Start Date", datetime.date(2020, 1, 1))
         end_date = st.sidebar.date_input("End Date", datetime.date(2023, 1, 1))
         if start_date >= end_date:
