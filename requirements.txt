@@ -1,0 +1,9 @@
+streamlit
+numpy
+pandas
+plotly
+scipy
+arch
+statsmodels
+python-dotenv
+yfinance
